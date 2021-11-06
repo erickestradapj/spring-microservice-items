@@ -12,15 +12,15 @@ import java.util.stream.Collectors;
 public class ItemServiceFeignImpl implements ItemService {
 
     @Autowired
-    private ProductClientRest clientFeign;
+    private ProductClientRest productClientRest;
 
     @Override
     public List<Item> findAll() {
-        return clientFeign.list().stream().map(product -> new Item(product, 1)).collect(Collectors.toList());
+        return productClientRest.list().stream().map(product -> new Item(product, 1)).collect(Collectors.toList());
     }
 
     @Override
     public Item findById(Long id, Integer amount) {
-        return new Item(clientFeign.detail(id), amount);
+        return new Item(productClientRest.detail(id), amount);
     }
 }
