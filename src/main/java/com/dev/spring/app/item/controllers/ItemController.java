@@ -9,19 +9,36 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.client.circuitbreaker.CircuitBreakerFactory;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
+import org.springframework.core.env.Environment;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
+@RefreshScope
 @RestController
 public class ItemController {
 
     private final Logger logger = LoggerFactory.getLogger(ItemController.class);
 
     @Autowired
+    private Environment environment;
+
+    @Autowired
     private CircuitBreakerFactory circuitBreakerFactory;
+
+    @Value("${configuration.text}")
+    private String text;
+
+    @Value("${server.port}")
+    private String port;
 
     @Autowired
     @Qualifier("serviceFeign")
@@ -81,5 +98,22 @@ public class ItemController {
         item.setAmount(amount);
         item.setProduct(product);
         return CompletableFuture.supplyAsync(() -> item);
+    }
+
+    @GetMapping("/get-config")
+    public ResponseEntity<?> getConfig() {
+
+        logger.info(text);
+
+        Map<String, String> json = new HashMap<>();
+        json.put("text", text);
+        json.put("port", port);
+
+        if (environment.getActiveProfiles().length > 0 && environment.getActiveProfiles()[0].equals("dev")) {
+            json.put("author.name", environment.getProperty("configuration.author.name"));
+            json.put("author.email", environment.getProperty("configuration.author.email"));
+        }
+
+        return new ResponseEntity<>(json, HttpStatus.OK);
     }
 }
